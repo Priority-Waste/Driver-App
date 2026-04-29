@@ -3,8 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Priority Waste – Driver App</title>
+<title>Priority Waste – Weight Ticket</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<!--
+  ═══════════════════════════════════════════════════════════════
+  PRIORITY WASTE — WEIGHT TICKET APP (Tablet)
+  ═══════════════════════════════════════════════════════════════
+  Drivers do NOT need to configure anything. Just open this file
+  in the tablet's browser and use it.
+
+  CONFIG (do this ONCE before deploying to tablets):
+    1. In Zapier, create a Zap with trigger:
+         Webhooks by Zapier → Catch Hook
+       Copy the Custom Webhook URL Zapier shows you.
+    2. Add actions to the Zap:
+         • Microsoft SharePoint → Create List Item
+         • Microsoft SharePoint → Upload File (for the photo)
+         • (optional) Microsoft Teams → Send channel message
+    3. In this file, scroll to the <script> block and replace
+       the value of ZAPIER_WEBHOOK_URL with the URL from step 1.
+    4. Distribute this folder to every driver tablet — done.
+
+  See SETUP.md in this same folder for full step-by-step.
+  ═══════════════════════════════════════════════════════════════
+-->
 <style>
 :root {
   --yellow: #FFC20E;
@@ -105,45 +127,36 @@ html, body {
   font-weight: 600;
 }
 
-/* Driver selector */
-.driver-select-wrap {
+/* PENDING / OFFLINE INDICATOR */
+.pending-banner {
   width: 100%;
-  background: var(--gray);
-  border: 2px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 20px;
-}
-
-.driver-select-wrap label {
-  display: block;
-  font-size: 0.75rem;
+  background: var(--orange);
+  color: var(--black);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.pending-banner.show { display: flex; }
+
+.pending-banner .pb-icon { font-size: 1.2rem; }
+
+.pending-banner button {
+  margin-left: auto;
+  background: var(--black);
   color: var(--yellow);
-  margin-bottom: 8px;
-}
-
-.driver-select-wrap select,
-.driver-select-wrap input {
-  width: 100%;
-  background: var(--mid);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-  appearance: none;
-  -webkit-appearance: none;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
-
-.driver-select-wrap select:last-child,
-.driver-select-wrap input:last-child { margin-bottom: 0; }
-
-.driver-select-wrap select option { background: #222; }
 
 /* BIG HOME BUTTONS */
 .home-actions {
@@ -170,21 +183,9 @@ html, body {
 
 .btn-home:active { transform: scale(0.97); }
 
-.btn-home.pretrip {
+.btn-home.weight {
   background: var(--yellow);
   color: var(--black);
-}
-
-.btn-home.posttrip {
-  background: var(--gray);
-  color: var(--white);
-  border: 2px solid var(--yellow);
-}
-
-.btn-home.weight {
-  background: var(--gray);
-  color: var(--white);
-  border: 2px solid #555;
 }
 
 .btn-home .btn-icon {
@@ -195,9 +196,7 @@ html, body {
   font-size: 1.6rem;
 }
 
-.pretrip .btn-icon { background: rgba(0,0,0,0.15); }
-.posttrip .btn-icon { background: var(--yellow-dim); }
-.weight .btn-icon { background: rgba(255,255,255,0.05); }
+.weight .btn-icon { background: rgba(0,0,0,0.15); }
 
 .btn-home .btn-text h3 {
   font-family: 'Bebas Neue', sans-serif;
@@ -207,7 +206,7 @@ html, body {
   margin-bottom: 3px;
 }
 
-.pretrip .btn-text h3 { color: var(--black); }
+.weight .btn-text h3 { color: var(--black); }
 
 .btn-home .btn-text p {
   font-size: 0.82rem;
@@ -215,7 +214,7 @@ html, body {
   font-weight: 500;
 }
 
-.pretrip .btn-text p { color: rgba(0,0,0,0.6); }
+.weight .btn-text p { color: rgba(0,0,0,0.6); }
 
 .btn-home .arrow {
   margin-left: auto;
@@ -360,138 +359,131 @@ html, body {
 .field select option { background: #222; }
 .field textarea { resize: none; min-height: 80px; }
 
-/* INSPECTION ITEMS — BIG TOUCH TARGETS */
-.insp-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.insp-item {
-  background: var(--gray);
-  border-radius: 14px;
-  padding: 14px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.insp-item .item-name {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--white);
-  line-height: 1.2;
-}
-
-.insp-btns {
-  display: flex;
-  gap: 6px;
-}
-
-.insp-btn {
-  flex: 1;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  background: var(--mid);
-  color: #888;
-  border: 1.5px solid var(--border);
-  text-align: center;
-}
-
-.insp-btn:active { transform: scale(0.95); }
-
-.insp-btn.ok.active {
-  background: var(--green);
-  color: var(--white);
-  border-color: var(--green);
-}
-
-.insp-btn.defect.active {
-  background: var(--red);
-  color: var(--white);
-  border-color: var(--red);
-}
-
-.insp-btn.na.active {
-  background: #555;
-  color: var(--white);
-  border-color: #555;
-}
-
-/* DEFECT NOTE */
-.defect-note {
-  display: none;
-  margin-top: 8px;
-}
-
-.defect-note.show { display: block; }
-
-.defect-note textarea {
-  width: 100%;
-  background: rgba(231,76,60,0.1);
-  border: 1.5px solid var(--red);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.9rem;
-  resize: none;
-  min-height: 60px;
-}
-
-.defect-note textarea::placeholder { color: rgba(255,100,80,0.6); }
-
-/* SIGNATURE PAD */
-.sig-wrap {
+/* PHOTO CAPTURE */
+.photo-wrap {
   background: var(--gray);
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 12px;
 }
 
-.sig-wrap label {
+.photo-wrap > label {
   display: block;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: #888;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
 }
 
-#sigCanvas {
+.photo-help {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.photo-input { display: none; }
+
+.photo-btn {
   width: 100%;
-  height: 160px;
   background: var(--mid);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  cursor: crosshair;
-  display: block;
-  touch-action: none;
-}
-
-.sig-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.sig-clear {
-  background: transparent;
-  border: 1.5px solid var(--border);
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 32px 16px;
   color: #888;
-  border-radius: 8px;
-  padding: 8px 16px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s;
+}
+
+.photo-btn:active { transform: scale(0.98); }
+
+.photo-btn:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.photo-btn .cam-icon {
+  font-size: 2.5rem;
+}
+
+.photo-btn .cam-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  color: var(--yellow);
+}
+
+.photo-btn .cam-hint {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.photo-preview-wrap {
+  display: none;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--mid);
+  border: 2px solid var(--yellow);
+}
+
+.photo-preview-wrap.show { display: block; }
+
+.photo-preview {
+  width: 100%;
+  display: block;
+  max-height: 400px;
+  object-fit: contain;
+  background: #000;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: var(--gray);
+}
+
+.photo-actions button {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.photo-actions .btn-retake {
+  background: var(--mid);
+  color: var(--yellow);
+  border: 1.5px solid var(--yellow);
+}
+
+.photo-actions .btn-remove {
+  background: var(--mid);
+  color: var(--red);
+  border: 1.5px solid var(--red);
+}
+
+.photo-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--green);
+  font-weight: 600;
 }
 
 /* SUBMIT BUTTON */
@@ -543,6 +535,10 @@ html, body {
   animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
 }
 
+.success-icon.queued {
+  background: var(--orange);
+}
+
 @keyframes pop {
   from { transform: scale(0); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -568,6 +564,8 @@ html, body {
   padding: 14px 20px;
   margin: 20px 0 32px;
   text-align: left;
+  width: 100%;
+  max-width: 500px;
 }
 
 #success .sub-detail p {
@@ -583,6 +581,7 @@ html, body {
 
 .btn-done {
   width: 100%;
+  max-width: 500px;
   background: var(--yellow);
   color: var(--black);
   border: none;
@@ -592,80 +591,6 @@ html, body {
   font-size: 1.4rem;
   letter-spacing: 2px;
   cursor: pointer;
-}
-
-/* ─── ZAPIER MODAL ─────────────────── */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 200;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.modal-overlay.show { display: flex; }
-
-.modal-box {
-  background: var(--gray);
-  border-radius: 20px 20px 0 0;
-  padding: 24px 20px 40px;
-  width: 100%;
-  max-width: 600px;
-  border-top: 3px solid var(--yellow);
-}
-
-.modal-box h3 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-  color: var(--yellow);
-  margin-bottom: 8px;
-}
-
-.modal-box p {
-  color: #aaa;
-  font-size: 0.9rem;
-  margin-bottom: 16px;
-}
-
-.modal-box input {
-  width: 100%;
-  background: var(--mid);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 13px 14px;
-  color: var(--white);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.95rem;
-  margin-bottom: 12px;
-}
-
-.modal-box input:focus { outline: none; border-color: var(--yellow); }
-
-.modal-btns { display: flex; gap: 10px; }
-
-.modal-btns button {
-  flex: 1;
-  border-radius: 10px;
-  padding: 14px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  border: none;
-}
-
-.modal-btns .btn-cancel {
-  background: var(--mid);
-  color: #888;
-  border: 1.5px solid var(--border);
-}
-
-.modal-btns .btn-save {
-  background: var(--yellow);
-  color: var(--black);
 }
 
 /* PROGRESS BAR */
@@ -711,6 +636,25 @@ html, body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--black);
+  border: 1.5px solid var(--yellow);
+  color: var(--yellow);
+  padding: 12px 20px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  z-index: 300;
+  display: none;
+}
+
+.toast.show { display: block; animation: pop 0.25s ease; }
 </style>
 </head>
 <body>
@@ -733,309 +677,25 @@ html, body {
   </div>
 
   <div class="home-greeting">
-    <h1>DRIVER<br>PORTAL</h1>
-    <p>Select a form to get started</p>
+    <h1>WEIGHT<br>TICKET</h1>
+    <p>Landfill dump entry</p>
     <div class="date-chip" id="homeDateChip"></div>
   </div>
 
-  <div class="driver-select-wrap">
-    <label>👤 Driver Info</label>
-    <input type="text" id="driverName" placeholder="Your Name" autocomplete="name">
-    <select id="truckNum">
-      <option value="">Select Truck #</option>
-      <option>Truck 101</option>
-      <option>Truck 102</option>
-      <option>Truck 103</option>
-      <option>Truck 104</option>
-      <option>Truck 105</option>
-      <option>Truck 106</option>
-      <option>Truck 107</option>
-      <option>Truck 108</option>
-      <option>Truck 109</option>
-      <option>Truck 110</option>
-    </select>
+  <div class="pending-banner" id="pendingBanner">
+    <span class="pb-icon">📡</span>
+    <span id="pendingText">0 tickets waiting to send</span>
+    <button onclick="retryPending()">RETRY</button>
   </div>
 
   <div class="home-actions">
-    <button class="btn-home pretrip" onclick="goForm('pretrip')">
-      <div class="btn-icon">🌅</div>
-      <div class="btn-text">
-        <h3>PRE-TRIP DVIR</h3>
-        <p>Start of day inspection</p>
-      </div>
-      <div class="arrow">›</div>
-    </button>
-
-    <button class="btn-home posttrip" onclick="goForm('posttrip')">
-      <div class="btn-icon">🌙</div>
-      <div class="btn-text">
-        <h3>POST-TRIP DVIR</h3>
-        <p>End of day inspection</p>
-      </div>
-      <div class="arrow">›</div>
-    </button>
-
-    <button class="btn-home weight" onclick="goForm('weight')">
+    <button class="btn-home weight" onclick="goForm()">
       <div class="btn-icon">⚖️</div>
       <div class="btn-text">
-        <h3>WEIGHT TICKET</h3>
-        <p>Landfill dump entry</p>
+        <h3>NEW WEIGHT TICKET</h3>
+        <p>Tap to start a landfill dump entry</p>
       </div>
       <div class="arrow">›</div>
-    </button>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════
-     PRE-TRIP DVIR SCREEN
-═══════════════════════════════════════ -->
-<div id="pretrip" class="screen form-screen">
-  <div class="form-header">
-    <button class="back-btn" onclick="goHome()">‹</button>
-    <div class="form-header-info">
-      <h2>🌅 PRE-TRIP DVIR</h2>
-      <p id="pretripMeta">Start of Day Inspection</p>
-    </div>
-    <div class="status-badge"><div class="status-dot"></div>LIVE</div>
-  </div>
-  <div class="progress-bar"><div class="progress-fill" id="pretripProgress" style="width:0%"></div></div>
-
-  <div class="form-body">
-
-    <div class="section-head">
-      <div class="s-num">1</div>
-      <h3>TRIP DETAILS</h3>
-    </div>
-    <div class="field-group">
-      <div class="field-row">
-        <div class="field">
-          <label>Date <span class="req">*</span></label>
-          <input type="date" id="pt_date">
-        </div>
-        <div class="field">
-          <label>Start Time <span class="req">*</span></label>
-          <input type="time" id="pt_time">
-        </div>
-      </div>
-      <div class="field">
-        <label>Route / Area</label>
-        <select id="pt_route">
-          <option value="">Select Route</option>
-          <option>North Zone</option>
-          <option>South Zone</option>
-          <option>East Zone</option>
-          <option>West Zone</option>
-          <option>Commercial Route A</option>
-          <option>Commercial Route B</option>
-          <option>Special Pickup</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Odometer Reading <span class="req">*</span></label>
-        <input type="number" id="pt_odometer" placeholder="e.g. 84530">
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">2</div>
-      <h3>VEHICLE INSPECTION</h3>
-    </div>
-    <p style="color:#888;font-size:0.85rem;margin-bottom:12px;padding:0 2px;">Tap OK, DEFECT, or N/A for each item</p>
-
-    <div class="insp-grid" id="pretripInspGrid">
-      <!-- Populated by JS -->
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">3</div>
-      <h3>FLUID LEVELS</h3>
-    </div>
-    <div class="insp-grid" id="pretripFluidGrid"></div>
-
-    <div class="section-head">
-      <div class="s-num">4</div>
-      <h3>LIGHTS & SAFETY</h3>
-    </div>
-    <div class="insp-grid" id="pretripLightGrid"></div>
-
-    <div class="section-head">
-      <div class="s-num">5</div>
-      <h3>HYDRAULICS & BODY</h3>
-    </div>
-    <div class="insp-grid" id="pretripHydGrid"></div>
-
-    <div class="section-head">
-      <div class="s-num">6</div>
-      <h3>ADDITIONAL NOTES</h3>
-    </div>
-    <div class="field-group">
-      <div class="field">
-        <label>General Notes / Comments</label>
-        <textarea id="pt_notes" placeholder="Any issues or notes for dispatch..."></textarea>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">7</div>
-      <h3>DRIVER SIGNATURE</h3>
-    </div>
-    <div class="sig-wrap">
-      <label>Sign Below to Certify Inspection</label>
-      <canvas id="sigCanvas" width="600" height="160"></canvas>
-      <div class="sig-actions">
-        <button class="sig-clear" onclick="clearSig()">Clear Signature</button>
-      </div>
-    </div>
-
-    <div style="height:20px"></div>
-  </div>
-
-  <div class="submit-bar">
-    <button class="btn-submit" onclick="submitForm('pretrip')">
-      ✅ SUBMIT PRE-TRIP DVIR
-    </button>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════
-     POST-TRIP DVIR SCREEN
-═══════════════════════════════════════ -->
-<div id="posttrip" class="screen form-screen">
-  <div class="form-header">
-    <button class="back-btn" onclick="goHome()">‹</button>
-    <div class="form-header-info">
-      <h2>🌙 POST-TRIP DVIR</h2>
-      <p id="posttripMeta">End of Day Inspection</p>
-    </div>
-    <div class="status-badge"><div class="status-dot"></div>LIVE</div>
-  </div>
-  <div class="progress-bar"><div class="progress-fill" id="posttripProgress" style="width:0%"></div></div>
-
-  <div class="form-body">
-    <div class="section-head">
-      <div class="s-num">1</div>
-      <h3>TRIP SUMMARY</h3>
-    </div>
-    <div class="field-group">
-      <div class="field-row">
-        <div class="field">
-          <label>Date <span class="req">*</span></label>
-          <input type="date" id="po_date">
-        </div>
-        <div class="field">
-          <label>End Time <span class="req">*</span></label>
-          <input type="time" id="po_time">
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>End Odometer <span class="req">*</span></label>
-          <input type="number" id="po_odometer" placeholder="e.g. 84890">
-        </div>
-        <div class="field">
-          <label>Total Stops</label>
-          <input type="number" id="po_stops" placeholder="e.g. 32">
-        </div>
-      </div>
-      <div class="field">
-        <label>Total Dumps / Landfill Visits</label>
-        <input type="number" id="po_dumps" placeholder="e.g. 2">
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">2</div>
-      <h3>VEHICLE INSPECTION</h3>
-    </div>
-    <p style="color:#888;font-size:0.85rem;margin-bottom:12px;padding:0 2px;">Check all items before returning truck</p>
-    <div class="insp-grid" id="posttripInspGrid"></div>
-
-    <div class="section-head">
-      <div class="s-num">3</div>
-      <h3>DAMAGE REPORT</h3>
-    </div>
-    <div class="field-group">
-      <div class="field">
-        <label>Any New Damage?</label>
-        <select id="po_damage">
-          <option value="no">No – Vehicle Undamaged</option>
-          <option value="yes">Yes – New Damage Found</option>
-        </select>
-      </div>
-      <div class="field" id="damageDescWrap" style="display:none">
-        <label>Describe Damage <span class="req">*</span></label>
-        <textarea id="po_damageDesc" placeholder="Describe location and nature of damage..."></textarea>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">4</div>
-      <h3>FUEL & MAINTENANCE</h3>
-    </div>
-    <div class="field-group">
-      <div class="field-row">
-        <div class="field">
-          <label>Fueled Up?</label>
-          <select id="po_fueled">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Fuel Level</label>
-          <select id="po_fuelLevel">
-            <option>Full</option>
-            <option>3/4</option>
-            <option>1/2</option>
-            <option>1/4</option>
-            <option>Low</option>
-          </select>
-        </div>
-      </div>
-      <div class="field">
-        <label>Maintenance Needed?</label>
-        <select id="po_maint">
-          <option value="no">No Issues</option>
-          <option value="yes">Yes – Needs Service</option>
-          <option value="urgent">URGENT – Do Not Use</option>
-        </select>
-      </div>
-      <div class="field" id="maintDescWrap" style="display:none">
-        <label>Describe Maintenance Issue <span class="req">*</span></label>
-        <textarea id="po_maintDesc" placeholder="Describe the issue..."></textarea>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">5</div>
-      <h3>NOTES & INCIDENTS</h3>
-    </div>
-    <div class="field-group">
-      <div class="field">
-        <label>Any Incidents or Customer Issues?</label>
-        <textarea id="po_incidents" placeholder="Describe any incidents, complaints, or unusual events..."></textarea>
-      </div>
-    </div>
-
-    <div class="section-head">
-      <div class="s-num">6</div>
-      <h3>DRIVER SIGNATURE</h3>
-    </div>
-    <div class="sig-wrap">
-      <label>Sign Below to Certify Inspection</label>
-      <canvas id="sigCanvasPost" width="600" height="160"></canvas>
-      <div class="sig-actions">
-        <button class="sig-clear" onclick="clearSig('post')">Clear Signature</button>
-      </div>
-    </div>
-    <div style="height:20px"></div>
-  </div>
-
-  <div class="submit-bar">
-    <button class="btn-submit" onclick="submitForm('posttrip')">
-      ✅ SUBMIT POST-TRIP DVIR
     </button>
   </div>
 </div>
@@ -1049,15 +709,31 @@ html, body {
     <button class="back-btn" onclick="goHome()">‹</button>
     <div class="form-header-info">
       <h2>⚖️ WEIGHT TICKET</h2>
-      <p id="weightMeta">Landfill Dump Entry</p>
+      <p>Landfill Dump Entry</p>
     </div>
     <div class="status-badge"><div class="status-dot"></div>LIVE</div>
   </div>
-  <div class="progress-bar"><div class="progress-fill" id="weightProgress" style="width:100%"></div></div>
+  <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
 
   <div class="form-body">
+
     <div class="section-head">
       <div class="s-num">1</div>
+      <h3>DRIVER & TRUCK</h3>
+    </div>
+    <div class="field-group">
+      <div class="field">
+        <label>Driver Name <span class="req">*</span></label>
+        <input type="text" id="wt_driver" placeholder="Your full name" autocomplete="name">
+      </div>
+      <div class="field">
+        <label>Truck Number <span class="req">*</span></label>
+        <input type="text" id="wt_truck" placeholder="e.g. 103" inputmode="numeric" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div class="s-num">2</div>
       <h3>DUMP DETAILS</h3>
     </div>
     <div class="field-group">
@@ -1091,7 +767,7 @@ html, body {
     </div>
 
     <div class="section-head">
-      <div class="s-num">2</div>
+      <div class="s-num">3</div>
       <h3>WEIGHT DATA</h3>
     </div>
     <div class="field-group">
@@ -1116,7 +792,7 @@ html, body {
     </div>
 
     <div class="section-head">
-      <div class="s-num">3</div>
+      <div class="s-num">4</div>
       <h3>MATERIAL TYPE</h3>
     </div>
     <div class="field-group">
@@ -1147,7 +823,38 @@ html, body {
     </div>
 
     <div class="section-head">
-      <div class="s-num">4</div>
+      <div class="s-num">5</div>
+      <h3>WEIGHT TICKET PHOTO</h3>
+    </div>
+    <div class="photo-wrap">
+      <label>📸 Photo of the Weight Ticket / Scale Receipt <span class="req">*</span></label>
+      <div class="photo-help">
+        Take a clear photo of the printed weight ticket or the scale display showing the weight number.
+      </div>
+
+      <!-- Hidden file input – capture="environment" opens the rear camera on tablets/phones -->
+      <input type="file" id="wt_photo" class="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+
+      <button type="button" class="photo-btn" id="photoBtn" onclick="document.getElementById('wt_photo').click()">
+        <div class="cam-icon">📷</div>
+        <div class="cam-label">TAP TO TAKE PHOTO</div>
+        <div class="cam-hint">Opens tablet camera • Hold ticket steady & well-lit</div>
+      </button>
+
+      <div class="photo-preview-wrap" id="photoPreviewWrap">
+        <img class="photo-preview" id="photoPreview" alt="Weight ticket photo">
+        <div class="photo-actions">
+          <button type="button" class="btn-retake" onclick="document.getElementById('wt_photo').click()">↻ Retake</button>
+          <button type="button" class="btn-remove" onclick="removePhoto()">✕ Remove</button>
+        </div>
+      </div>
+      <div class="photo-status" id="photoStatus" style="display:none">
+        <span>✓</span><span id="photoStatusText">Photo attached</span>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <div class="s-num">6</div>
       <h3>NOTES</h3>
     </div>
     <div class="field-group">
@@ -1160,7 +867,7 @@ html, body {
   </div>
 
   <div class="submit-bar">
-    <button class="btn-submit" onclick="submitForm('weight')">
+    <button class="btn-submit" id="submitBtn" onclick="submitForm()">
       ✅ SUBMIT WEIGHT TICKET
     </button>
   </div>
@@ -1171,109 +878,63 @@ html, body {
      SUCCESS SCREEN
 ═══════════════════════════════════════ -->
 <div id="success" class="screen">
-  <div class="success-icon">✓</div>
-  <h2>SUBMITTED!</h2>
-  <p>Your form has been sent to dispatch.</p>
+  <div class="success-icon" id="successIcon">✓</div>
+  <h2 id="successTitle">SUBMITTED!</h2>
+  <p id="successMsg">Your weight ticket has been sent.</p>
   <p style="font-size:0.85rem;color:#666;margin-top:4px;" id="successTimestamp"></p>
   <div class="sub-detail">
-    <p id="successFormType">Pre-Trip DVIR</p>
+    <p id="successFormType">Weight Ticket</p>
     <span id="successDriverInfo"></span>
   </div>
   <button class="btn-done" onclick="goHome()">↩ BACK TO HOME</button>
 </div>
 
 
-<!-- ═══════════════════════════════════════
-     ZAPIER SETTINGS MODAL
-═══════════════════════════════════════ -->
-<div class="modal-overlay" id="zapierModal">
-  <div class="modal-box">
-    <h3>⚡ ZAPIER WEBHOOK</h3>
-    <p>Paste your Zapier Webhook URL below. Data will be sent automatically on each form submission.</p>
-    <input type="url" id="zapierURL" placeholder="https://hooks.zapier.com/hooks/catch/..." />
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeZapier()">Cancel</button>
-      <button class="btn-save" onclick="saveZapier()">Save URL</button>
-    </div>
-  </div>
-</div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 
 <script>
-// ═══════════════════════════════════════
-// STATE & CONFIG
-// ═══════════════════════════════════════
-let sigPad = { canvas: null, ctx: null, drawing: false, hasData: false };
-let sigPadPost = { canvas: null, ctx: null, drawing: false, hasData: false };
-let currentForm = 'pretrip';
+// ═══════════════════════════════════════════════════════════════
+// CONFIG — set this ONCE before deploying to driver tablets
+// ═══════════════════════════════════════════════════════════════
+//
+// Replace the URL below with the Catch Hook URL from your Zap
+// (Zapier → Webhooks by Zapier → Catch Hook).
+// See SETUP.md in this folder for the full step-by-step.
+//
+const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/23994168/uvr089b/';
 
-const ZAPIER_KEY = 'pw_zapier_webhook';
-let zapierURL = localStorage.getItem(ZAPIER_KEY) || '';
+// Local-storage keys
+const QUEUE_KEY = 'pw_weight_ticket_queue';
+const LAST_DRIVER_KEY = 'pw_last_driver';
+const LAST_TRUCK_KEY = 'pw_last_truck';
 
-// Inspection item definitions
-const vehicleItems = [
-  'Air Brakes', 'Service Brakes', 'Parking Brake', 'Steering',
-  'Tires – Front', 'Tires – Rear', 'Wheels & Lug Nuts', 'Mirrors',
-  'Windshield', 'Wipers', 'Horn', 'Seat Belt',
-  'Cab / Doors', 'Floor / Steps'
-];
-
-const fluidItems = [
-  'Engine Oil', 'Coolant Level', 'Hydraulic Fluid', 'Washer Fluid',
-  'DEF Level', 'Brake Fluid'
-];
-
-const lightItems = [
-  'Headlights', 'Tail Lights', 'Turn Signals', 'Brake Lights',
-  'Reverse Lights', 'Work Lights', 'Strobe / Safety Lights', 'Reflectors'
-];
-
-const hydItems = [
-  'Packer Blade', 'Ejector Panel', 'Hopper / Body', 'Hydraulic Lines',
-  'Rear Gate / Tailgate', 'Compactor', 'Body Locks', 'Arm / Grabber'
-];
-
-const posttripItems = [
-  'Brakes', 'Tires', 'Lights', 'Mirrors',
-  'Body Damage', 'Cab Interior', 'Hydraulics', 'Leaks / Fluids',
-  'Safety Equipment', 'Cleanliness'
-];
+// Photo state
+let capturedPhotoDataURL = '';
 
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   setDates();
-  buildInspGrid('pretripInspGrid', vehicleItems);
-  buildInspGrid('pretripFluidGrid', fluidItems);
-  buildInspGrid('pretripLightGrid', lightItems);
-  buildInspGrid('pretripHydGrid', hydItems);
-  buildInspGrid('posttripInspGrid', posttripItems);
-  initSig();
-  initSigPost();
+  prefillDriverTruck();
+  updatePendingBanner();
 
-  // Damage toggle
-  document.getElementById('po_damage').addEventListener('change', function() {
-    document.getElementById('damageDescWrap').style.display = this.value === 'yes' ? 'block' : 'none';
-  });
+  // Try to flush any queued submissions (e.g. previous offline failures)
+  flushQueue();
 
-  // Maint toggle
-  document.getElementById('po_maint').addEventListener('change', function() {
-    document.getElementById('maintDescWrap').style.display = this.value !== 'no' ? 'block' : 'none';
-  });
-
-  // Facility other toggle
+  // Facility "Other" toggle
   document.getElementById('wt_facility').addEventListener('change', function() {
-    document.getElementById('wt_facilityOtherWrap').style.display = this.value === 'Other' ? 'block' : 'none';
+    document.getElementById('wt_facilityOtherWrap').style.display =
+      this.value === 'Other' ? 'block' : 'none';
   });
 
-  // Long press home logo for settings
-  const logo = document.querySelector('.logo-badge');
-  let pressTimer;
-  logo.addEventListener('touchstart', () => { pressTimer = setTimeout(() => openZapier(), 1500); });
-  logo.addEventListener('touchend', () => clearTimeout(pressTimer));
-  logo.addEventListener('mousedown', () => { pressTimer = setTimeout(() => openZapier(), 1500); });
-  logo.addEventListener('mouseup', () => clearTimeout(pressTimer));
+  // Retry queue whenever the tablet comes back online
+  window.addEventListener('online', () => {
+    showToast('Back online — sending queued tickets…');
+    flushQueue();
+  });
 });
 
 function setDates() {
@@ -1284,51 +945,19 @@ function setDates() {
   document.getElementById('homeDateChip').textContent =
     now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  ['pt_date','po_date','wt_date'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = today;
-  });
-
-  ['pt_time','po_time','wt_time'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = timeStr;
-  });
+  const dateEl = document.getElementById('wt_date');
+  if (dateEl) dateEl.value = today;
+  const timeEl = document.getElementById('wt_time');
+  if (timeEl) timeEl.value = timeStr;
 }
 
-// ═══════════════════════════════════════
-// INSPECTION GRID BUILDER
-// ═══════════════════════════════════════
-function buildInspGrid(gridId, items) {
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.innerHTML = '';
-
-  items.forEach((name, i) => {
-    const itemId = gridId + '_' + i;
-    const div = document.createElement('div');
-    div.className = 'insp-item';
-    div.innerHTML = `
-      <div class="item-name">${name}</div>
-      <div class="insp-btns">
-        <button class="insp-btn ok" onclick="setInsp('${itemId}','ok',this)">✓ OK</button>
-        <button class="insp-btn defect" onclick="setInsp('${itemId}','defect',this)">✗ DEF</button>
-        <button class="insp-btn na" onclick="setInsp('${itemId}','na',this)">N/A</button>
-      </div>
-      <div class="defect-note" id="${itemId}_note">
-        <textarea placeholder="Describe defect..."></textarea>
-      </div>
-    `;
-    grid.appendChild(div);
-  });
-}
-
-function setInsp(itemId, status, btn) {
-  const parent = btn.closest('.insp-item');
-  parent.querySelectorAll('.insp-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
-  const note = document.getElementById(itemId + '_note');
-  if (note) note.classList.toggle('show', status === 'defect');
+// Remember the driver's name and truck across sessions on the same
+// tablet — saves typing it every dump.
+function prefillDriverTruck() {
+  const lastDriver = localStorage.getItem(LAST_DRIVER_KEY);
+  const lastTruck = localStorage.getItem(LAST_TRUCK_KEY);
+  if (lastDriver) document.getElementById('wt_driver').value = lastDriver;
+  if (lastTruck) document.getElementById('wt_truck').value = lastTruck;
 }
 
 // ═══════════════════════════════════════
@@ -1342,68 +971,55 @@ function calcNet() {
 }
 
 // ═══════════════════════════════════════
-// SIGNATURE PAD
+// PHOTO HANDLING
 // ═══════════════════════════════════════
-function initSig() {
-  const canvas = document.getElementById('sigCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  sigPad = { canvas, ctx, drawing: false, hasData: false };
-  canvas.addEventListener('touchstart', e => startDraw(e, sigPad), { passive: false });
-  canvas.addEventListener('touchmove', e => draw(e, sigPad), { passive: false });
-  canvas.addEventListener('touchend', () => endDraw(sigPad));
-  canvas.addEventListener('mousedown', e => startDraw(e, sigPad));
-  canvas.addEventListener('mousemove', e => draw(e, sigPad));
-  canvas.addEventListener('mouseup', () => endDraw(sigPad));
+function handlePhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Resize / compress so the payload stays small enough for
+      // SharePoint attachments and Power Automate's request limits.
+      const canvas = document.createElement('canvas');
+      const maxDim = 1600;
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round(height * (maxDim / width));
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round(width * (maxDim / height));
+        height = maxDim;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      capturedPhotoDataURL = canvas.toDataURL('image/jpeg', 0.85);
+
+      document.getElementById('photoPreview').src = capturedPhotoDataURL;
+      document.getElementById('photoPreviewWrap').classList.add('show');
+      document.getElementById('photoBtn').style.display = 'none';
+
+      const sizeKB = Math.round(capturedPhotoDataURL.length * 0.75 / 1024);
+      document.getElementById('photoStatusText').textContent =
+        `Photo attached (${sizeKB} KB)`;
+      document.getElementById('photoStatus').style.display = 'flex';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
-function initSigPost() {
-  const canvas = document.getElementById('sigCanvasPost');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  sigPadPost = { canvas, ctx, drawing: false, hasData: false };
-  canvas.addEventListener('touchstart', e => startDraw(e, sigPadPost), { passive: false });
-  canvas.addEventListener('touchmove', e => draw(e, sigPadPost), { passive: false });
-  canvas.addEventListener('touchend', () => endDraw(sigPadPost));
-  canvas.addEventListener('mousedown', e => startDraw(e, sigPadPost));
-  canvas.addEventListener('mousemove', e => draw(e, sigPadPost));
-  canvas.addEventListener('mouseup', () => endDraw(sigPadPost));
-}
-
-function getPos(e, canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const touch = e.touches ? e.touches[0] : e;
-  return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY };
-}
-
-function startDraw(e, pad) {
-  e.preventDefault();
-  const pos = getPos(e, pad.canvas);
-  pad.ctx.beginPath();
-  pad.ctx.moveTo(pos.x, pos.y);
-  pad.drawing = true;
-}
-
-function draw(e, pad) {
-  if (!pad.drawing) return;
-  e.preventDefault();
-  const pos = getPos(e, pad.canvas);
-  pad.ctx.lineWidth = 3;
-  pad.ctx.lineCap = 'round';
-  pad.ctx.strokeStyle = '#FFC20E';
-  pad.ctx.lineTo(pos.x, pos.y);
-  pad.ctx.stroke();
-  pad.hasData = true;
-}
-
-function endDraw(pad) { pad.drawing = false; }
-
-function clearSig(which) {
-  const pad = which === 'post' ? sigPadPost : sigPad;
-  pad.ctx.clearRect(0, 0, pad.canvas.width, pad.canvas.height);
-  pad.hasData = false;
+function removePhoto() {
+  capturedPhotoDataURL = '';
+  document.getElementById('wt_photo').value = '';
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('photoPreviewWrap').classList.remove('show');
+  document.getElementById('photoBtn').style.display = 'flex';
+  document.getElementById('photoStatus').style.display = 'none';
 }
 
 // ═══════════════════════════════════════
@@ -1415,143 +1031,251 @@ function showScreen(id) {
   window.scrollTo(0, 0);
 }
 
-function goHome() { showScreen('home'); setDates(); }
-
-function goForm(type) {
-  currentForm = type;
-  const name = document.getElementById('driverName').value || 'Driver';
-  const truck = document.getElementById('truckNum').value || 'No Truck';
-  const meta = `${name} — ${truck}`;
-
-  if (type === 'pretrip') document.getElementById('pretripMeta').textContent = meta;
-  if (type === 'posttrip') document.getElementById('posttripMeta').textContent = meta;
-  if (type === 'weight') document.getElementById('weightMeta').textContent = meta;
-
-  showScreen(type);
+function goHome() {
+  showScreen('home');
+  setDates();
+  updatePendingBanner();
 }
 
-// ═══════════════════════════════════════
-// COLLECT INSPECTION DATA
-// ═══════════════════════════════════════
-function collectInspData(gridId, items) {
-  const results = {};
-  items.forEach((name, i) => {
-    const itemId = gridId + '_' + i;
-    const active = document.querySelector(`#${gridId} [id="${itemId}"]`)?.closest('.insp-item')?.querySelector('.insp-btn.active');
-    const status = active ? active.classList.contains('ok') ? 'OK' : active.classList.contains('defect') ? 'DEFECT' : 'N/A' : 'NOT CHECKED';
-    const noteEl = document.getElementById(itemId + '_note')?.querySelector('textarea');
-    results[name] = { status, note: noteEl?.value || '' };
-  });
-  return results;
+function goForm() {
+  showScreen('weight');
 }
 
 // ═══════════════════════════════════════
 // SUBMIT
 // ═══════════════════════════════════════
-function submitForm(type) {
-  const driver = document.getElementById('driverName').value || 'Unknown';
-  const truck = document.getElementById('truckNum').value || 'Unknown';
-  const now = new Date();
+function submitForm() {
+  const required = [
+    ['wt_driver', 'Driver Name'],
+    ['wt_truck', 'Truck Number'],
+    ['wt_date', 'Date'],
+    ['wt_time', 'Time'],
+    ['wt_facility', 'Facility'],
+    ['wt_gross', 'Gross Weight'],
+    ['wt_tare', 'Tare Weight'],
+    ['wt_type', 'Waste Type']
+  ];
+  for (const [id, label] of required) {
+    if (!document.getElementById(id).value) {
+      alert(`Please fill in: ${label}`);
+      document.getElementById(id).focus();
+      return;
+    }
+  }
+  if (document.getElementById('wt_facility').value === 'Other' &&
+      !document.getElementById('wt_facilityOther').value) {
+    alert('Please enter the facility name.');
+    return;
+  }
+  if (!capturedPhotoDataURL) {
+    if (!confirm('No photo of the weight ticket has been attached. Submit anyway?')) {
+      return;
+    }
+  }
 
-  let payload = {
-    form_type: type === 'pretrip' ? 'Pre-Trip DVIR' : type === 'posttrip' ? 'Post-Trip DVIR' : 'Weight Ticket',
+  const driver = document.getElementById('wt_driver').value.trim();
+  const truck = document.getElementById('wt_truck').value;
+  const facility = document.getElementById('wt_facility').value === 'Other'
+    ? document.getElementById('wt_facilityOther').value.trim()
+    : document.getElementById('wt_facility').value;
+
+  // Remember driver / truck for next time on this tablet
+  localStorage.setItem(LAST_DRIVER_KEY, driver);
+  localStorage.setItem(LAST_TRUCK_KEY, truck);
+
+  const now = new Date();
+  const payload = {
+    form_type: 'Weight Ticket',
     submitted_at: now.toISOString(),
+    company: 'Priority Waste',
     driver_name: driver,
     truck_number: truck,
-    company: 'Priority Waste'
+    date: document.getElementById('wt_date').value,
+    time: document.getElementById('wt_time').value,
+    facility: facility,
+    gross_weight_lbs: document.getElementById('wt_gross').value,
+    tare_weight_lbs: document.getElementById('wt_tare').value,
+    net_weight_lbs: document.getElementById('wt_net').value,
+    ticket_number: document.getElementById('wt_ticket').value,
+    waste_type: document.getElementById('wt_type').value,
+    dump_number_today: document.getElementById('wt_dumpNum').value,
+    notes: document.getElementById('wt_notes').value,
+    photo_attached: !!capturedPhotoDataURL,
+    photo_filename: buildPhotoFilename(driver, truck, now),
+    photo_base64: capturedPhotoDataURL
+      ? capturedPhotoDataURL.replace(/^data:image\/\w+;base64,/, '')
+      : ''
   };
 
-  if (type === 'pretrip') {
-    payload = {
-      ...payload,
-      date: document.getElementById('pt_date').value,
-      start_time: document.getElementById('pt_time').value,
-      route: document.getElementById('pt_route').value,
-      odometer_start: document.getElementById('pt_odometer').value,
-      vehicle_inspection: collectInspData('pretripInspGrid', vehicleItems),
-      fluid_levels: collectInspData('pretripFluidGrid', fluidItems),
-      lights_safety: collectInspData('pretripLightGrid', lightItems),
-      hydraulics_body: collectInspData('pretripHydGrid', hydItems),
-      notes: document.getElementById('pt_notes').value,
-      signature: sigPad.hasData ? sigPad.canvas.toDataURL() : 'not signed'
-    };
-  }
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'SENDING…';
 
-  if (type === 'posttrip') {
-    payload = {
-      ...payload,
-      date: document.getElementById('po_date').value,
-      end_time: document.getElementById('po_time').value,
-      odometer_end: document.getElementById('po_odometer').value,
-      total_stops: document.getElementById('po_stops').value,
-      total_dumps: document.getElementById('po_dumps').value,
-      vehicle_inspection: collectInspData('posttripInspGrid', posttripItems),
-      new_damage: document.getElementById('po_damage').value,
-      damage_description: document.getElementById('po_damageDesc').value,
-      fueled: document.getElementById('po_fueled').value,
-      fuel_level: document.getElementById('po_fuelLevel').value,
-      maintenance_needed: document.getElementById('po_maint').value,
-      maintenance_description: document.getElementById('po_maintDesc').value,
-      incidents: document.getElementById('po_incidents').value,
-      signature: sigPadPost.hasData ? sigPadPost.canvas.toDataURL() : 'not signed'
-    };
-  }
+  sendPayload(payload)
+    .then(() => {
+      showSuccess(payload, false);
+      resetForm();
+    })
+    .catch(err => {
+      console.warn('Submit failed, queuing locally:', err);
+      enqueue(payload);
+      showSuccess(payload, true);
+      resetForm();
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '✅ SUBMIT WEIGHT TICKET';
+    });
+}
 
-  if (type === 'weight') {
-    payload = {
-      ...payload,
-      date: document.getElementById('wt_date').value,
-      time: document.getElementById('wt_time').value,
-      facility: document.getElementById('wt_facility').value === 'Other'
-        ? document.getElementById('wt_facilityOther').value
-        : document.getElementById('wt_facility').value,
-      gross_weight_lbs: document.getElementById('wt_gross').value,
-      tare_weight_lbs: document.getElementById('wt_tare').value,
-      net_weight_lbs: document.getElementById('wt_net').value,
-      ticket_number: document.getElementById('wt_ticket').value,
-      waste_type: document.getElementById('wt_type').value,
-      dump_number_today: document.getElementById('wt_dumpNum').value,
-      notes: document.getElementById('wt_notes').value
-    };
-  }
+function buildPhotoFilename(driver, truck, date) {
+  const safe = s => (s || '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+  const ts = date.toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
+  return `${ts}_${safe(truck)}_${safe(driver)}.jpg`;
+}
 
-  console.log('Submitting payload:', payload);
-
-  // Send to Zapier if configured
-  const hook = localStorage.getItem(ZAPIER_KEY);
-  if (hook) {
-    fetch(hook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(err => console.warn('Zapier send failed:', err));
-  }
-
-  // Show success
+function showSuccess(payload, queued) {
   document.getElementById('successFormType').textContent = payload.form_type;
-  document.getElementById('successDriverInfo').textContent = `${driver} — ${truck}`;
-  document.getElementById('successTimestamp').textContent = now.toLocaleString('en-US', {
-    weekday: 'long', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit'
-  });
+  document.getElementById('successDriverInfo').textContent =
+    `${payload.driver_name} — ${payload.truck_number}`;
+  document.getElementById('successTimestamp').textContent =
+    new Date(payload.submitted_at).toLocaleString('en-US', {
+      weekday: 'long', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+
+  const icon = document.getElementById('successIcon');
+  if (queued) {
+    icon.textContent = '⟳';
+    icon.classList.add('queued');
+    document.getElementById('successTitle').textContent = 'SAVED!';
+    document.getElementById('successMsg').textContent =
+      'No connection. Ticket saved on tablet — it will send automatically when back online.';
+  } else {
+    icon.textContent = '✓';
+    icon.classList.remove('queued');
+    document.getElementById('successTitle').textContent = 'SUBMITTED!';
+    document.getElementById('successMsg').textContent =
+      'Your weight ticket has been sent.';
+  }
   showScreen('success');
+  updatePendingBanner();
+}
+
+function resetForm() {
+  // Keep driver + truck filled in for the next dump
+  document.getElementById('wt_facility').value = '';
+  document.getElementById('wt_facilityOtherWrap').style.display = 'none';
+  document.getElementById('wt_facilityOther').value = '';
+  document.getElementById('wt_gross').value = '';
+  document.getElementById('wt_tare').value = '';
+  document.getElementById('wt_net').value = '';
+  document.getElementById('wt_ticket').value = '';
+  document.getElementById('wt_type').value = '';
+  document.getElementById('wt_dumpNum').selectedIndex = 0;
+  document.getElementById('wt_notes').value = '';
+  removePhoto();
 }
 
 // ═══════════════════════════════════════
-// ZAPIER SETTINGS
+// NETWORK + QUEUE
 // ═══════════════════════════════════════
-function openZapier() {
-  document.getElementById('zapierURL').value = localStorage.getItem(ZAPIER_KEY) || '';
-  document.getElementById('zapierModal').classList.add('show');
+function sendPayload(payload) {
+  if (!ZAPIER_WEBHOOK_URL || ZAPIER_WEBHOOK_URL.startsWith('PASTE_')) {
+    return Promise.reject(new Error('Zapier webhook URL not configured'));
+  }
+  return fetch(ZAPIER_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(res => {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res;
+  });
 }
-function closeZapier() {
-  document.getElementById('zapierModal').classList.remove('show');
+
+function getQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+  } catch {
+    return [];
+  }
 }
-function saveZapier() {
-  const url = document.getElementById('zapierURL').value.trim();
-  if (url) localStorage.setItem(ZAPIER_KEY, url);
-  else localStorage.removeItem(ZAPIER_KEY);
-  closeZapier();
+
+function setQueue(arr) {
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(arr));
+  } catch (err) {
+    console.warn('Failed to write queue (storage full?):', err);
+  }
+}
+
+function enqueue(payload) {
+  const q = getQueue();
+  q.push({ payload, queued_at: new Date().toISOString(), attempts: 0 });
+  setQueue(q);
+}
+
+function flushQueue() {
+  const q = getQueue();
+  if (q.length === 0) return;
+  if (!navigator.onLine) {
+    updatePendingBanner();
+    return;
+  }
+
+  // Send sequentially; stop on first failure so we don't hammer offline
+  (async () => {
+    let remaining = q.slice();
+    while (remaining.length) {
+      const item = remaining[0];
+      try {
+        await sendPayload(item.payload);
+        remaining.shift();
+        setQueue(remaining);
+        updatePendingBanner();
+      } catch (err) {
+        item.attempts = (item.attempts || 0) + 1;
+        setQueue(remaining);
+        console.warn('Queue flush failed, will retry later:', err);
+        break;
+      }
+    }
+    if (remaining.length === 0 && q.length > 0) {
+      showToast('All queued tickets sent ✓');
+    }
+  })();
+}
+
+function retryPending() {
+  if (!navigator.onLine) {
+    showToast('Still offline — try again when connected');
+    return;
+  }
+  showToast('Retrying…');
+  flushQueue();
+}
+
+function updatePendingBanner() {
+  const q = getQueue();
+  const banner = document.getElementById('pendingBanner');
+  if (q.length === 0) {
+    banner.classList.remove('show');
+    return;
+  }
+  document.getElementById('pendingText').textContent =
+    `${q.length} ticket${q.length === 1 ? '' : 's'} waiting to send`;
+  banner.classList.add('show');
+}
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
 }
 </script>
 
