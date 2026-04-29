@@ -1202,9 +1202,14 @@ function sendPayload(payload) {
   if (!ZAPIER_WEBHOOK_URL || ZAPIER_WEBHOOK_URL.startsWith('PASTE_')) {
     return Promise.reject(new Error('Zapier webhook URL not configured'));
   }
+  // NOTE: We deliberately do NOT set Content-Type: application/json.
+  // Doing so triggers a CORS preflight (OPTIONS) request that fails
+  // when this page is opened from a file:// URL on a tablet, killing
+  // the POST with "Failed to fetch". Without that header the browser
+  // defaults to text/plain, which is a "simple" CORS request that
+  // skips preflight. Zapier still parses the JSON body correctly.
   return fetch(ZAPIER_WEBHOOK_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   }).then(res => {
     if (!res.ok) throw new Error('HTTP ' + res.status);
