@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Priority Waste – Weight Ticket</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <!--
@@ -935,6 +938,21 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Back online — sending queued tickets…');
     flushQueue();
   });
+
+  // Long-press the orange "tickets waiting" banner to clear the queue
+  // (escape hatch for stale / unrecoverable queued items).
+  const banner = document.getElementById('pendingBanner');
+  let bannerPressTimer;
+  banner.addEventListener('touchstart', () => {
+    bannerPressTimer = setTimeout(confirmClearQueue, 1500);
+  });
+  banner.addEventListener('touchend', () => clearTimeout(bannerPressTimer));
+  banner.addEventListener('touchcancel', () => clearTimeout(bannerPressTimer));
+  banner.addEventListener('mousedown', () => {
+    bannerPressTimer = setTimeout(confirmClearQueue, 1500);
+  });
+  banner.addEventListener('mouseup', () => clearTimeout(bannerPressTimer));
+  banner.addEventListener('mouseleave', () => clearTimeout(bannerPressTimer));
 });
 
 function setDates() {
@@ -1216,44 +1234,64 @@ function enqueue(payload) {
   setQueue(q);
 }
 
+// Send queued tickets one at a time. We DO NOT short-circuit on
+// navigator.onLine — on some tablets that flag lies. If we're really
+// offline the fetch will simply fail and the queue stays intact.
 function flushQueue() {
   const q = getQueue();
-  if (q.length === 0) return;
-  if (!navigator.onLine) {
+  if (q.length === 0) {
     updatePendingBanner();
-    return;
+    return Promise.resolve({ sent: 0, remaining: 0, lastError: null });
   }
 
-  // Send sequentially; stop on first failure so we don't hammer offline
-  (async () => {
+  return (async () => {
     let remaining = q.slice();
+    let sent = 0;
+    let lastError = null;
     while (remaining.length) {
       const item = remaining[0];
       try {
         await sendPayload(item.payload);
         remaining.shift();
+        sent++;
         setQueue(remaining);
         updatePendingBanner();
       } catch (err) {
+        lastError = err;
         item.attempts = (item.attempts || 0) + 1;
         setQueue(remaining);
         console.warn('Queue flush failed, will retry later:', err);
         break;
       }
     }
-    if (remaining.length === 0 && q.length > 0) {
-      showToast('All queued tickets sent ✓');
-    }
+    return { sent, remaining: remaining.length, lastError };
   })();
 }
 
 function retryPending() {
-  if (!navigator.onLine) {
-    showToast('Still offline — try again when connected');
-    return;
-  }
   showToast('Retrying…');
-  flushQueue();
+  flushQueue().then(result => {
+    if (result.sent > 0 && result.remaining === 0) {
+      showToast(`✓ ${result.sent} ticket${result.sent === 1 ? '' : 's'} sent`);
+    } else if (result.sent > 0) {
+      showToast(`Sent ${result.sent}, ${result.remaining} still queued`);
+    } else if (result.remaining > 0) {
+      const msg = result.lastError && result.lastError.message
+        ? result.lastError.message : 'connection error';
+      showToast('Send failed: ' + msg);
+    }
+  });
+}
+
+// Long-press the orange banner for ~1.5s to clear the queue without sending.
+// Useful if the queued tickets are stale (e.g. queued during a bad config
+// state and you've already re-entered them).
+function confirmClearQueue() {
+  if (confirm('Clear all queued tickets without sending?\n\nUse this only if you have already re-entered them or want to discard them.')) {
+    setQueue([]);
+    updatePendingBanner();
+    showToast('Queue cleared');
+  }
 }
 
 function updatePendingBanner() {
