@@ -1202,19 +1202,58 @@ function sendPayload(payload) {
   if (!ZAPIER_WEBHOOK_URL || ZAPIER_WEBHOOK_URL.startsWith('PASTE_')) {
     return Promise.reject(new Error('Zapier webhook URL not configured'));
   }
-  // NOTE: We deliberately do NOT set Content-Type: application/json.
-  // Doing so triggers a CORS preflight (OPTIONS) request that fails
-  // when this page is opened from a file:// URL on a tablet, killing
-  // the POST with "Failed to fetch". Without that header the browser
-  // defaults to text/plain, which is a "simple" CORS request that
-  // skips preflight. Zapier still parses the JSON body correctly.
+  // We send the form as multipart/form-data so the photo arrives at
+  // Zapier as a REAL file, not a base64 string buried in JSON.
+  //
+  // Why this matters: previously we sent the photo as base64 inside
+  // a JSON body and used a "Code by Zapier" step in the Zap to decode
+  // it back to a Buffer. When that Code step's Buffer output was
+  // passed to SharePoint "Upload File", SharePoint received it as a
+  // stringified representation instead of real binary — the file
+  // landed in SharePoint with the right name and extension but
+  // garbled bytes inside (corrupt photo).
+  //
+  // With multipart/form-data, Zapier's Catch Hook hydrates the
+  // uploaded file automatically, so SharePoint "Upload File" can
+  // consume it directly with no Code step. No Buffer-to-string
+  // conversion happens anywhere — no corruption.
+  //
+  // CORS note: multipart/form-data is on the browser's CORS safelist
+  // for Content-Type, so this is still a "simple" request and does
+  // NOT trigger a preflight (OPTIONS), which means it keeps working
+  // when index.html is opened from a file:// URL on a tablet.
+  const fd = new FormData();
+  for (const key in payload) {
+    if (!Object.prototype.hasOwnProperty.call(payload, key)) continue;
+    if (key === 'photo_base64') continue; // sent below as a real file
+    const v = payload[key];
+    fd.append(key, v == null ? '' : String(v));
+  }
+  if (payload.photo_base64) {
+    const blob = base64ToBlob(payload.photo_base64, 'image/jpeg');
+    fd.append('photo', blob, payload.photo_filename || 'weight_ticket.jpg');
+  }
   return fetch(ZAPIER_WEBHOOK_URL, {
     method: 'POST',
-    body: JSON.stringify(payload)
+    body: fd
   }).then(res => {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res;
   });
+}
+
+// Decode raw base64 (no "data:image/jpeg;base64," prefix) into a Blob.
+// Used to convert the canvas-encoded JPEG (stored as base64 so it can
+// be JSON-serialized into the offline retry queue) back into a real
+// binary file when we POST it to Zapier.
+function base64ToBlob(base64, mime) {
+  const binStr = atob(base64);
+  const len = binStr.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binStr.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime || 'application/octet-stream' });
 }
 
 function getQueue() {
